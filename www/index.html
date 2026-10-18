@@ -1333,6 +1333,7 @@ body.dark .bottom-nav{
 
 </style>
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
+<script>if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch(console.error)); }</script>
 </head>
 
 <body>
@@ -5925,7 +5926,7 @@ ${html}
 Smart Nota
 </div>
 
-<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("./service-worker.js").catch(console.error); }</script>
+
 </body>
 </html>
 `;
