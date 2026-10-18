@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<link rel="manifest" href="./manifest.json">
 <meta charset="UTF-8">
 
 <meta
@@ -1302,10 +1303,57 @@ body.dark .bottom-nav{
     font-size:18px;
   }
 }
+
+#snLoginOverlay {
+  position: fixed; inset: 0; z-index: 999999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 22px; background: #f5f7fb; direction: rtl;
+  font-family: Arial, sans-serif;
+}
+#snLoginOverlay[hidden] { display: none !important; }
+#snLoginCard {
+  width: 100%; max-width: 390px; background: white;
+  border-radius: 22px; padding: 25px;
+  box-shadow: 0 10px 40px rgba(15,23,42,.12);
+}
+#snLoginCard h2 { margin: 0 0 8px; color: #1d4ed8; }
+#snLoginCard p { color: #64748b; line-height: 1.7; }
+#snLoginCard label { display: block; margin: 14px 0 6px; }
+#snLoginCard input {
+  display: block; width: 100%; padding: 13px;
+  border: 1px solid #cbd5e1; border-radius: 10px;
+  font-size: 16px; box-sizing: border-box;
+}
+#snLoginCard button {
+  width: 100%; padding: 14px; margin-top: 18px;
+  border: 0; border-radius: 10px; background: #2563eb;
+  color: white; font-size: 16px; font-weight: bold;
+}
+#snLoginError { color: #dc2626 !important; overflow-wrap: anywhere; }
+
 </style>
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
 </head>
 
 <body>
+
+<div id="snLoginOverlay">
+  <div id="snLoginCard">
+    <h2>Smart Nota</h2>
+    <p>سجّل الدخول للوصول إلى بيانات المبيعات والزبائن المتزامنة.</p>
+    <form id="snLoginForm">
+      <label for="snLoginEmail">البريد الإلكتروني</label>
+      <input id="snLoginEmail" type="email" autocomplete="username"
+             required placeholder="name@example.com">
+      <label for="snLoginPassword">كلمة المرور</label>
+      <input id="snLoginPassword" type="password"
+             autocomplete="current-password" required>
+      <button id="snLoginButton" type="submit">تسجيل الدخول</button>
+      <p id="snLoginError" role="alert"></p>
+    </form>
+  </div>
+</div>
+
 
 <div id="appShell">
 
@@ -3299,50 +3347,32 @@ function totalDue(){
 ========================================================= */
 
 function saveCloudData(){
-
-  try{
-
-    if(
-      window.Android &&
-      typeof window.Android.saveCloudData === "function"
-    ){
-
-      window.Android.saveCloudData(
-        JSON.stringify(appData)
-      );
-
+  try {
+    if (window.Android &&
+        typeof window.Android.saveCloudData === "function") {
+      window.Android.saveCloudData(JSON.stringify(appData));
+      return;
     }
-
-  }catch(error){
-
-    console.error(
-      "Cloud save error:",
-      error
-    );
-
+    if (typeof window.firebaseSaveCloudData === "function") {
+      window.firebaseSaveCloudData(JSON.stringify(appData));
+    }
+  } catch(error) {
+    console.error("Cloud save error:", error);
   }
 }
 
 function requestCloudData(){
-
-  try{
-
-    if(
-      window.Android &&
-      typeof window.Android.loadCloudData === "function"
-    ){
-
+  try {
+    if (window.Android &&
+        typeof window.Android.loadCloudData === "function") {
       window.Android.loadCloudData();
-
+      return;
     }
-
-  }catch(error){
-
-    console.error(
-      "Cloud load error:",
-      error
-    );
-
+    if (typeof window.firebaseLoadCloudData === "function") {
+      window.firebaseLoadCloudData();
+    }
+  } catch(error) {
+    console.error("Cloud load error:", error);
   }
 }
 
@@ -3420,13 +3450,14 @@ function normalizeData(data){
 ========================================================= */
 
 function getLocalDataKey(){
-  try{
+  try {
     const uid = window.Android &&
       typeof window.Android.getUserUid === "function"
-      ? window.Android.getUserUid()
-      : "";
+        ? window.Android.getUserUid()
+        : (window.firebaseCurrentUser
+            ? window.firebaseCurrentUser.uid : "");
     return uid ? "smartNotaData_" + uid : "smartNotaData_guest";
-  }catch(error){
+  } catch(error) {
     console.error(error);
     return "smartNotaData_guest";
   }
@@ -5894,6 +5925,7 @@ ${html}
 Smart Nota
 </div>
 
+<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("./service-worker.js").catch(console.error); }</script>
 </body>
 </html>
 `;
@@ -6433,43 +6465,24 @@ function printStatement(){
 ========================================================= */
 
 function logoutApp(){
+  if (!confirm(appData.settings.language === "ar"
+      ? "هل تريد تسجيل الخروج؟" : "Do you want to logout?")) {
+    return;
+  }
+  saveLocal();
 
-  if(
-    !confirm(
-      appData.settings.language === "ar"
-        ? "هل تريد تسجيل الخروج؟"
-        : "Do you want to logout?"
-    )
-  ){
+  if (window.Android &&
+      typeof window.Android.logout === "function") {
+    window.Android.logout();
     return;
   }
 
-  saveLocal();
-
-  try{
-
-    if(
-      window.Android &&
-      typeof window.Android.logout === "function"
-    ){
-
-      window.Android.logout();
-
-      return;
-
-    }
-
-  }catch(error){
-
-    console.error(error);
-
+  if (typeof window.firebaseLogout === "function") {
+    window.firebaseLogout();
+    return;
   }
 
-  showToast(
-    tr("loggedOut"),
-    "info"
-  );
-
+  showToast(tr("loggedOut"), "info");
 }
 
 /* =========================================================
@@ -6553,6 +6566,154 @@ document.addEventListener(
   "DOMContentLoaded",
   initialize
 );
+</script>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+const loginOverlay = document.getElementById("snLoginOverlay");
+const loginForm = document.getElementById("snLoginForm");
+const loginError = document.getElementById("snLoginError");
+const loginButton = document.getElementById("snLoginButton");
+
+function showLoginError(message) {
+  if (loginError) loginError.textContent = message;
+}
+
+function firebaseMessage(error) {
+  const code = error && error.code ? error.code : "";
+  const messages = {
+    "auth/invalid-credential": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+    "auth/invalid-email": "صيغة البريد الإلكتروني غير صحيحة.",
+    "auth/too-many-requests": "محاولات كثيرة. انتظر قليلًا ثم حاول مجددًا.",
+    "auth/network-request-failed": "تحقق من اتصال الإنترنت.",
+    "auth/user-disabled": "هذا الحساب معطّل.",
+    "permission-denied": "رفضت صلاحيات Firestore الوصول. راجع قواعد الأمان."
+  };
+  return messages[code] || ("تعذّر إكمال العملية: " + (error.message || code));
+}
+
+const isAndroid = !!(
+  window.Android &&
+  typeof window.Android.getUserUid === "function"
+);
+
+if (isAndroid) {
+  // نسخة أندرويد تستمر باستخدام Firebase والجسر الأصلي الموجودين فيها.
+  loginOverlay.hidden = true;
+} else {
+  const firebaseConfig = {
+    apiKey: "AIzaSyA5hxWWL-r_6VQYHihShnGf-aEBUzgTE8s",
+    authDomain: "salescustomerscloud-a1402.firebaseapp.com",
+    projectId: "salescustomerscloud-a1402",
+    storageBucket: "salescustomerscloud-a1402.firebasestorage.app",
+    messagingSenderId: "644560466893",
+    appId: "1:644560466893:web:d7f149996d9cfc2a238a84"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+  let authReady = false;
+  let loadingCloud = false;
+
+  const salesDoc = (uid) => doc(db, "users", uid, "appData", "sales");
+
+  window.firebaseCurrentUser = null;
+
+  window.firebaseSaveCloudData = async (json) => {
+    if (!currentUser || loadingCloud) return;
+    try {
+      await setDoc(salesDoc(currentUser.uid), {
+        json: json,
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error("Firebase save failed:", error);
+      showLoginError(firebaseMessage(error));
+    }
+  };
+
+  window.firebaseLoadCloudData = async () => {
+    if (!currentUser || loadingCloud) return;
+    loadingCloud = true;
+    try {
+      const snapshot = await getDoc(salesDoc(currentUser.uid));
+      if (snapshot.exists() && snapshot.data().json) {
+        window.onCloudDataLoaded(snapshot.data().json);
+        if (typeof window.saveLocal === "function") window.saveLocal();
+      } else if (typeof window.saveCloudData === "function") {
+        // لا توجد وثيقة بعد لهذا المستخدم؛ ارفع بياناته المحلية الأولية.
+        window.saveCloudData();
+      }
+    } catch (error) {
+      console.error("Firebase load failed:", error);
+      showLoginError(firebaseMessage(error));
+    } finally {
+      loadingCloud = false;
+    }
+  };
+
+  window.firebaseLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      showLoginError(firebaseMessage(error));
+    }
+  };
+
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    showLoginError("");
+    loginButton.disabled = true;
+    loginButton.textContent = "جارٍ تسجيل الدخول...";
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        document.getElementById("snLoginEmail").value.trim(),
+        document.getElementById("snLoginPassword").value
+      );
+    } catch (error) {
+      showLoginError(firebaseMessage(error));
+    } finally {
+      loginButton.disabled = false;
+      loginButton.textContent = "تسجيل الدخول";
+    }
+  });
+
+  onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
+    window.firebaseCurrentUser = user;
+    authReady = true;
+
+    if (!user) {
+      loginOverlay.hidden = false;
+      showLoginError("");
+      return;
+    }
+
+    loginOverlay.hidden = true;
+    const email = user.email || "";
+    const name = user.displayName || email || "م";
+    const topEmail = document.getElementById("topEmail");
+    const sideEmail = document.getElementById("sideEmail");
+    const avatar = document.getElementById("avatar");
+    if (topEmail) topEmail.textContent = email || name;
+    if (sideEmail) sideEmail.textContent = email || name;
+    if (avatar) avatar.textContent = name.charAt(0).toUpperCase();
+
+    await window.firebaseLoadCloudData();
+  });
+}
 </script>
 
 </body>
