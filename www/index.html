@@ -5951,8 +5951,21 @@ Smart Nota
 
     }
 
-    window.print();
+    const printWindow = window.open("", "_blank");
 
+if(!printWindow){
+  showToast(tr("printError"), "error");
+  return;
+}
+
+printWindow.onload = function(){
+  printWindow.focus();
+  printWindow.print();
+};
+
+printWindow.document.open();
+printWindow.document.write(full);
+printWindow.document.close();
   }catch(error){
 
     showToast(
