@@ -5825,19 +5825,61 @@ function printHtml(html){
 <html lang="${appData.settings.language}" dir="${document.documentElement.dir}">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Print</title>
 
 <style>
-
 *{
   box-sizing:border-box;
 }
 
 body{
   margin:0;
-  padding:30px;
+  padding:20px;
   font-family:Arial,"Tahoma",sans-serif;
   color:#111827;
   direction:${document.documentElement.dir};
+  background:#f1f5f9;
+}
+
+.toolbar{
+  position:sticky;
+  top:0;
+  z-index:9999;
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  padding:12px;
+  background:#ffffff;
+  border-bottom:1px solid #ddd;
+}
+
+.toolbar button{
+  border:0;
+  border-radius:8px;
+  padding:12px 20px;
+  font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.printBtn{
+  background:#2563eb;
+  color:white;
+}
+
+.backBtn{
+  background:#e2e8f0;
+  color:#111827;
+}
+
+.content{
+  background:white;
+  max-width:1000px;
+  margin:15px auto;
+  padding:25px;
+  border-radius:10px;
 }
 
 .header{
@@ -5892,8 +5934,7 @@ table{
   margin-top:15px;
 }
 
-th,
-td{
+th,td{
   border:1px solid #e2e8f0;
   padding:8px;
   font-size:10px;
@@ -5920,10 +5961,42 @@ th{
   font-size:9px;
 }
 
+@media print{
+  body{
+    padding:0;
+    background:white;
+  }
+
+  .toolbar{
+    display:none!important;
+  }
+
+  .content{
+    margin:0;
+    padding:10px;
+    max-width:none;
+    border-radius:0;
+  }
+}
+
 </style>
 </head>
 
 <body>
+
+<div class="toolbar">
+
+  <button class="backBtn" onclick="goBack()">
+    ↩ ${appData.settings.language==="ar"?"رجوع إلى التطبيق":"Back to App"}
+  </button>
+
+  <button class="printBtn" onclick="startPrint()">
+    🖨️ ${appData.settings.language==="ar"?"طباعة":"Print"}
+  </button>
+
+</div>
+
+<div class="content">
 
 ${html}
 
@@ -5931,6 +6004,29 @@ ${html}
 Smart Nota
 </div>
 
+</div>
+
+<script>
+
+function goBack(){
+  window.close();
+
+  setTimeout(function(){
+    if(!window.closed){
+      history.back();
+    }
+  },200);
+}
+
+function startPrint(){
+  window.print();
+}
+
+window.onafterprint=function(){
+  // Keep the preview open so the user can return or print again.
+};
+
+</script>
 
 </body>
 </html>
@@ -5943,29 +6039,22 @@ Smart Nota
       typeof window.Android.printPage === "function"
     ){
 
-      window.Android.printPage(
-        full
-      );
-
+      window.Android.printPage(full);
       return;
 
     }
 
     const printWindow = window.open("", "_blank");
 
-if(!printWindow){
-  showToast(tr("printError"), "error");
-  return;
-}
+    if(!printWindow){
+      showToast(tr("printError"), "error");
+      return;
+    }
 
-printWindow.onload = function(){
-  printWindow.focus();
-  printWindow.print();
-};
+    printWindow.document.open();
+    printWindow.document.write(full);
+    printWindow.document.close();
 
-printWindow.document.open();
-printWindow.document.write(full);
-printWindow.document.close();
   }catch(error){
 
     showToast(
@@ -5976,9 +6065,6 @@ printWindow.document.close();
   }
 
 }
-
-function printInvoice(id){
-
   const item =
     appData.invoices.find(
       x=>x.id===id
