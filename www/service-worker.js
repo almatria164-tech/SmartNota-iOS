@@ -1,4 +1,4 @@
-const CACHE_NAME = "smart-nota-v1";
+const CACHE_NAME = "smart-nota-v2";
 const FILES_TO_CACHE = [
 "./",
 "./index.html",
