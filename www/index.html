@@ -4789,7 +4789,143 @@ renderDailySummary();
   renderRecentActivity();
 
 }
+function renderDailySummary(){
 
+  const area = $("dailySummary");
+  if(!area) return;
+
+  const day = today();
+
+  const invoices = appData.invoices.filter(
+    x=>sameDate(x.date,day)
+  );
+
+  const receipts = appData.receipts.filter(
+    x=>sameDate(x.date,day)
+  );
+
+  const returns = appData.returns.filter(
+    x=>sameDate(x.date,day)
+  );
+
+  const sales = invoices.reduce(
+    (s,x)=>s+Math.max(0,number(x.total)-number(x.discount)),0
+  );
+
+  const discounts = invoices.reduce(
+    (s,x)=>s+number(x.discount),0
+  );
+
+  const collected = receipts.reduce(
+    (s,x)=>s+number(x.amount),0
+  );
+
+  const commission = receipts.reduce(
+    (s,x)=>s+receiptCommission(x),0
+  );
+
+  const returned = returns.reduce(
+    (s,x)=>s+number(x.amount),0
+  );
+
+  const operations = [
+    ...invoices.map(x=>({
+      type:"فاتورة",
+      number:x.number,
+      customer:x.customerId,
+      amount:Math.max(0,number(x.total)-number(x.discount)),
+      note:x.notes
+    })),
+    ...receipts.map(x=>({
+      type:"سند قبض",
+      number:x.number,
+      customer:x.customerId,
+      amount:number(x.amount),
+      note:x.notes
+    })),
+    ...returns.map(x=>({
+      type:"مرتجع",
+      number:x.number,
+      customer:x.customerId,
+      amount:number(x.amount),
+      note:x.notes
+    }))
+  ];
+
+  area.innerHTML=`
+
+    <div class="report-cards">
+
+      <div class="report-card">
+        <div class="report-card-label">المبيعات</div>
+        <div class="report-card-value">${money(sales)}</div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-label">الخصومات</div>
+        <div class="report-card-value">${money(discounts)}</div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-label">المقبوضات</div>
+        <div class="report-card-value">${money(collected)}</div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-label">العمولات</div>
+        <div class="report-card-value">${money(commission)}</div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-label">المرتجعات</div>
+        <div class="report-card-value">${money(returned)}</div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-label">صافي المستحق</div>
+        <div class="report-card-value">
+          ${money(sales-returned-collected)}
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:16px;font-weight:900">
+      تفاصيل عمليات اليوم
+    </div>
+
+    <div style="margin-top:10px;display:grid;gap:8px">
+
+      ${operations.length ? operations.map(x=>`
+
+        <div style="padding:10px;border:1px solid var(--border);border-radius:11px">
+
+          <strong>${escapeHtml(x.type)} رقم ${escapeHtml(x.number || "-")}</strong>
+
+          <div style="font-size:11px;margin-top:5px">
+            العميل: ${escapeHtml(customerName(x.customer))}
+          </div>
+
+          <div style="font-size:11px;margin-top:4px">
+            المبلغ: ${money(x.amount)}
+          </div>
+
+          ${x.note ? `
+            <div style="font-size:11px;margin-top:4px;color:var(--muted)">
+              الملاحظات: ${escapeHtml(x.note)}
+            </div>
+          ` : ""}
+
+        </div>
+
+      `).join("") : `
+        <div class="empty">لا توجد عمليات اليوم</div>
+      `}
+
+    </div>
+
+  `;
+}
 function renderRecentActivity(){
 
   const area =
