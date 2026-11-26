@@ -6088,10 +6088,13 @@ th{
     ↩ ${appData.settings.language==="ar"?"رجوع إلى التطبيق":"Back to App"}
   </button>
 
-  <button class="printBtn" onclick="startPrint()">
+   <button class="printBtn" onclick="startPrint()">
     🖨️ ${appData.settings.language==="ar"?"طباعة":"Print"}
   </button>
 
+  <button class="pdfBtn" onclick="exportPDF()">
+    📄 ${appData.settings.language==="ar"?"تصدير PDF":"Export PDF"}
+  </button>
 </div>
 
 <div class="content">
