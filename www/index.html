@@ -6123,7 +6123,77 @@ function goBack(){
 function startPrint(){
   window.print();
 }
+async function exportPDF(){
 
+  const button = document.querySelector(".pdfBtn");
+  const oldText = button.textContent;
+
+  try{
+    button.disabled = true;
+    button.textContent = "جارٍ تجهيز PDF...";
+
+    const blob = await html2pdf()
+      .set({
+        margin: 8,
+        filename: "QONTA-Report.pdf",
+        image: {type:"jpeg",quality:0.98},
+        html2canvas: {scale:2,useCORS:true},
+        jsPDF: {
+          unit:"mm",
+          format:"a4",
+          orientation:"portrait"
+        }
+      })
+      .from(document.querySelector(".content"))
+      .outputPdf("blob");
+
+    const file = new File(
+      [blob],
+      "QONTA-Report.pdf",
+      {type:"application/pdf"}
+    );
+
+    if(window.showSaveFilePicker){
+      const handle = await window.showSaveFilePicker({
+        suggestedName:"QONTA-Report.pdf",
+        types:[{
+          description:"PDF",
+          accept:{"application/pdf":[".pdf"]}
+        }]
+      });
+
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+
+    }else if(
+      navigator.canShare &&
+      navigator.canShare({files:[file]}) &&
+      navigator.share
+    ){
+      await navigator.share({
+        files:[file],
+        title:"QONTA PDF"
+      });
+
+    }else{
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "QONTA-Report.pdf";
+      link.click();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+    }
+
+  }catch(error){
+    if(error.name !== "AbortError"){
+      alert("تعذر تصدير PDF. حاول مرة أخرى.");
+    }
+  }finally{
+    button.disabled = false;
+    button.textContent = oldText;
+  }
+}
 window.onafterprint=function(){
   // Keep the preview open so the user can return or print again.
 };
