@@ -6044,6 +6044,19 @@ th,td{
   font-size:10px;
   text-align:${document.documentElement.dir==="rtl"?"right":"left"};
 }
+.statement-table{
+  width:100%;
+  table-layout:fixed;
+}
+
+.statement-table th,
+.statement-table td{
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  vertical-align:top;
+  line-height:1.6;
+}
 
 th{
   background:#f8fafc;
