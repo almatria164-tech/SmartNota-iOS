@@ -7012,7 +7012,7 @@ if (isAndroid) {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
     } catch (error) {
       showLoginError(firebaseMessage(error));
       googleLoginButton.disabled = false;
@@ -7020,10 +7020,6 @@ if (isAndroid) {
     }
   });
 
-  getRedirectResult(auth).catch((error) => {
-    console.error("Google sign-in redirect failed:", error);
-    showLoginError(firebaseMessage(error));
-  });
   onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     window.firebaseCurrentUser = user;
