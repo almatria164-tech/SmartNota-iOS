@@ -6880,7 +6880,13 @@ document.addEventListener(
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import {
-  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
+  getAuth,
+onAuthStateChanged,
+signInWithEmailAndPassword,
+GoogleAuthProvider,
+signInWithRedirect,
+getRedirectResult,
+signOut
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, serverTimestamp
